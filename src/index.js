@@ -1,68 +1,59 @@
-import fetchBreeds from './js/cat-api';
-
-// import axios from "axios";
-// axios.defaults.headers.common["x-api-key"] = "live_EE5U1dvdCILjpuzYwtBoA2og3YzMObJ6nzJJlb1YgGCX5CuXUNrcJ2YxdS9r1CFu";
+import Notiflix from 'notiflix';
+import { fetchBreeds, fetchCatByBreed } from './js/cat-api';
 
 const refs = {
   selectEl: document.querySelector('.breed-select'),
   catEl: document.querySelector('.cat-info'),
-}
+  loaderEl: document.querySelector('.loader'),
+  errorEl: document.querySelector('.error'),
+};
 
-refs.selectEl.addEventListener('change', currentSelect)
+refs.selectEl.addEventListener('change', currentSelect);
 
-console.log();
+refs.selectEl.classList.toggle('is-hidden');
+refs.errorEl.classList.toggle('is-hidden');
+
 
 function currentSelect() {
-  console.log(refs.selectEl.value);
   const breedId = refs.selectEl.value;
   console.log(breedId);
-  refs.catEl.innerHTML = ''
-  fetchCatByBreed(breedId)
+  refs.catEl.innerHTML = '';
+  refs.loaderEl.classList.toggle('is-hidden');
 
-
-}
-function fetchCatByBreed(breedId) {
-  return fetch(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}
-  &api_key=live_EE5U1dvdCILjpuzYwtBoA2og3YzMObJ6nzJJlb1YgGCX5CuXUNrcJ2YxdS9r1CFu`)
-  .then(response => response.json()).then(data => {
-    console.log(data[0].url);
-    const img = `<img src="${data[0].url}" alt="" width="300">`;
-    
-    refs.catEl.insertAdjacentHTML('beforeend', img)
-  })
+  fetchCatByBreed(breedId).then(renderCat).catch(errorMessage);
 }
 
-
-
-
-
-
-fetchBreeds().then(renderBreeds).catch(error => {
-  console.log('error');
-})
+  fetchBreeds().then(renderBreeds).catch(errorMessage);
 
 function renderBreeds(data) {
-// console.log(data[0].breeds[0].name);
-  data.forEach(itm => {
-    // console.log(itm.id);
-    // fetch(`https://api.thecatapi.com/v1/images/${itm.id}`).then(r => r.json()).then(console.log());
-})
+  const option = data.map(itm => {
+    return `
+  <option value='${itm.id}'>${itm.name}</option>
+  `;
+  }).join();
 
-const option = data.map((itm, idx) => {
-  // console.log(itm.id);
-  return `
-  <option value="${itm.id}">${itm.name}</option>
-  `
-}).join()
-refs.selectEl.insertAdjacentHTML('beforeend', '<option name="">select</option>')
-refs.selectEl.insertAdjacentHTML('beforeend', option)
+  refs.selectEl.insertAdjacentHTML('beforeend', '<option name="">Select</option>');
+  refs.selectEl.insertAdjacentHTML('beforeend', option);
+  // refs.selectEl.innerHTML = option;
+  refs.selectEl.classList.toggle('is-hidden');
+  refs.loaderEl.classList.toggle('is-hidden');
+}
 
+function renderCat(data) {
+  const img = `
+  <div><img src='${data[0].url}' alt='' width='300'></div>
+  <h2 class='cat-text'>${data[0].breeds[0].name}</h2>
+  <p class='cat-text'>${data[0].breeds[0].description}</p>
+  <p class='cat-text'><span class='cat-temp'>Temperament: </span> ${data[0].breeds[0].temperament}</p>
+`;
+  refs.catEl.insertAdjacentHTML('beforeend', img);
+  // console.log(data[0].breeds[0].description);
+  refs.loaderEl.classList.toggle('is-hidden');
+}
 
-const img = data.map(itm => {
-  return `
-  <img src="${itm.url}" alt="" width="300">
-  `
-})
-// refs.catEl.insertAdjacentHTML('beforeend', img)
-
+function errorMessage(data) {
+  refs.selectEl.classList.add('is-hidden');
+  refs.loaderEl.classList.add('is-hidden');
+  // refs.errorEl.classList.remove('is-hidden');
+  Notiflix.Notify.failure('Oops! Something went wrong! Try reloading the page!');
 }
